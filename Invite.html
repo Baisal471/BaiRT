@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>X-Мессенджер</title>
+<style>
+  * {
+    box-sizing: border-box;
+  }
+  body, html {
+    margin:0; padding:0; height:100vh; font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    background: #f0f2f5;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  #app {
+    display: flex;
+    width: 90vw;
+    height: 90vh;
+    box-shadow: 0 0 15px rgba(0,0,0,0.15);
+    border-radius: 10px;
+    overflow: hidden;
+    background: white;
+  }
+
+  /* Секция регистрации и авторизации */
+  #loginScreen {
+    width: 400px;
+    padding: 30px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+  #loginScreen h2 {
+    margin-bottom: 20px;
+    text-align: center;
+  }
+  #loginScreen input[type="text"],
+  #loginScreen input[type="password"] {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 15px;
+    border: 1.5px solid #ccc;
+    border-radius: 5px;
+    font-size: 16px;
+  }
+  #loginScreen button {
+    padding: 12px;
+    background: #1DA1F2;
+    border: none;
+    border-radius: 5px;
+    color: white;
+    font-weight: 700;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background 0.3s;
+  }
+  #loginScreen button:hover {
+    background: #0d8ddb;
+  }
+  #loginScreen .switchMode {
+    margin-top: 15px;
+    text-align: center;
+    color: #555;
+    cursor: pointer;
+    user-select: none;
+  }
+  #loginScreen .error {
+    color: red;
+    margin-bottom: 15px;
+    font-size: 14px;
+  }
+
+  /* Основной интерфейс */
+  #mainApp {
+    display: flex;
+    width: 100%;
+    height: 100%;
+  }
+
+  /* Левая колонка с пользователями */
+  #usersList {
+    width: 280px;
+    border-right: 1px solid #ddd;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+  }
+  #usersList header {
+    padding: 15px;
+    font-weight: 700;
+    font-size: 18px;
+    border-bottom: 1px solid #ddd;
+    background: #f9fafb;
+  }
+  #usersList .user {
+    padding: 10px 15px;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  #usersList .user:hover {
+    background: #e8f5fe;
+  }
+  #usersList .user img.avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin-right: 12px;
+  }
+  #usersList .user .user-info {
+    flex-grow: 1;
+  }
+  #usersList .user .user-info .username {
+    font-weight: 700;
+    font-size: 15px;
+    color: #222;
+  }
+  #usersList .user .user-info .name {
+    font-size: 13px;
+    color: #666;
+  }
+  #usersList .user button.subscribe-btn {
+    background: #1DA1F2;
+    border: none;
+    border-radius: 15px;
+    color: white;
+    padding: 5px 12px;
+    font-size: 13px;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.3s;
+  }
+  #usersList .user button.subscribe-btn.subscribed {
+    background: #657786;
+  }
+
+  /* Середина — лента публикаций */
+  #feed {
+    flex-grow: 1;
+    overflow-y: auto;
+    background: white;
+    display: flex;
+    flex-direction: column;
+  }
+  #feed header {
+    padding: 15px;
+    font-weight: 700;
+    font-size: 20px;
+    border-bottom: 1px solid #ddd;
+    background: #f9fafb;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  #feed .post-list {
+    flex-grow: 1;
+    overflow-y: auto;
+    padding: 15px;
+  }
+  #feed .post {
+    border-bottom: 1px solid #eee;
+    padding: 12px 0;
+  }
+  #feed .post:last-child {
+    border-bottom: none;
+  }
+  #feed .post .post-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 8px;
+  }
+  #feed .post .post-header img.avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin-right: 10px;
+  }
+  #feed .post .post-header .username {
+    font-weight: 700;
+    font-size: 14px;
+    color: #1DA1F2;
+    cursor: pointer;
+  }
+  #feed .post .post-content {
+    font-size: 15px;
+    color: #222;
+    white-space: pre-wrap;
+  }
+
+  /* Правый профиль */
+  #profile {
+    width: 320px;
+    border-left: 1px solid #ddd;
+    background: #f9fafb;
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+  }
+  #profile header {
+    font-weight: 700;
+    font-size: 18px;
+    margin-bottom: 15px;
+  }
+  #profile .avatar-upload {
+    align-self: center;
+    margin-bottom: 15px;
+    position: relative;
+  }
+  #profile .avatar-upload img.avatar {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #1DA1F2;
+  }
+  #profile input[type="file"] {
+    display: none;
+  }
+  #profile label.upload-btn {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    background: #1DA1F2;
+    color: white;
+    padding: 5px 10px;
+    font-size: 13px;
+    border-radius: 20px;
+    cursor: pointer;
+  }
+  #profile .edit-field {
+    margin-bottom: 10px;
+  }
+  #profile .edit-field label {
+    display: block;
+    font-weight: 600;
+    font-size: 13px;
+    margin-bottom: 4px;
+    color: #555;
+  }
+  #profile .edit-field input[type="text"] {
+    width: 100%;
+    padding: 8px;
+    border: 1.5px solid #ccc;
+    border-radius: 5px;
+    font-size: 15px;
+  }
+  #profile button.save-btn {
+    margin-top: auto;
+    background: #1DA1F2;
+    color: white;
+    border: none;
+    padding: 12px;
+    font-weight: 700;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background 0.3s;
+  }
+  #profile button.save-btn:hover {
+    background: #0d8ddb;
+  }
+
+  /* Добавить публикацию */
+  #newPostForm {
+    border-top: 1px solid #ddd;
+    padding: 15px;
+    background: #f9fafb;
+    display: flex;
+    flex-direction: column;
+  }
+  #newPostForm textarea {
+    width: 100%;
+    resize: vertical;
+    min-height: 60px;
+    padding: 10px;
+    font-size: 15px;
+    border-radius: 8px;
+    border: 1.5px solid #ccc;
+    margin-bottom: 10px;
+  }
+  #newPostForm button {
+    align-self: flex-end;
+    background: #1DA1F2;
+    border: none;
+    color: white;
+    padding: 10px 16px;
+    font-weight: 700;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 15px;
+  }
+  #newPostForm button:disabled {
+    background: #a7d4f9;
+    cursor: default;
+  }
+
+  /* Скроллбар для feed и post-list */
+  #feed .post-list::-webkit-scrollbar,
+  #feed::-webkit-scrollbar {
+    width: 7px;
+  }
+  #feed .post-list::-webkit-scrollbar-thumb,
+  #feed::-webkit-scrollbar-thumb {
+    background: #1DA1F2;
+    border-radius: 10px;
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <!-- Экран регистрации/логина -->
+  <div id="loginScreen">
+    <h2 id="loginTitle">Вход в X-Мессенджер</h2>
+    <div class="error" id="loginError"></div>
+    <input type="text" id="loginUsername" placeholder="Имя пользователя (без пробелов)" autocomplete="off" />
+    <input type="password" id="loginPassword" placeholder="Пароль" autocomplete="off" />
+    <button id="loginBtn">Войти</button>
+    <div class="switchMode" id="switchToRegister">Нет аккаунта? Зарегистрироваться</div>
+  </div>
+
+  <!-- Основной интерфейс -->
+  <div id="mainApp" style="display:none;">
+    <!-- Список пользователей слева -->
+    <div id="usersList">
+      <header>Пользователи</header>
+      <div id="usersContainer"></div>
+    </div>
+
+    <!-- Лента публикаций -->
+    <div id="feed">
+      <header>Лента публикаций</header>
+      <div id="postList" class="post-list"></div>
+      <form id="newPostForm">
+        <textarea id="newPostText" placeholder="Что у вас нового?" maxlength="280"></textarea>
+        <button type="submit" disabled>Опубликовать</button>
+      </form>
+    </div>
+
+    <!-- Профиль справа -->
+    <div id="profile">
+      <header>Ваш профиль</header>
+      <div class="avatar-upload">
+        <img src="" alt="Аватар" id="profileAvatar" class="avatar" />
+        <label for="avatarInput" class="upload-btn" title="Загрузить аватар">📷</label>
+        <input type="file" id="avatarInput" accept="image/*" />
+      </div>
+      <div class="edit-field">
+        <label for="profileUsername">Имя пользователя</label>
+        <input type="text" id="profileUsername" disabled />
+      </div>
+      <div class="edit-field">
+        <label for="profileName">Отображаемое имя</label>
+        <input type="text" id="profileName" />
+      </div>
+      <button id="saveProfileBtn">Сохранить профиль</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // --- Логика приложения ---
+
+  // users = [{username, password, name, avatarDataUrl, subscriptions: []}]
+  // posts = [{id, username, content, timestamp}]
+  // currentUser = username
+
+  // Ключи localStorage
+  const LS_USERS = "xmessenger_users";
+  const LS_POSTS = "xmessenger_posts";
+  const LS_CURRENT_USER = "xmessenger_currentUser";
+
+  // Получаем данные из localStorage или пустые по умолчанию
+  let users = JSON.parse(localStorage.getItem(LS_USERS) || "[]");
+  let posts = JSON.parse(localStorage.getItem(LS_POSTS) || "[]");
+  let currentUser = localStorage.getItem(LS_CURRENT_USER);
+
+  // Элементы
+  const loginScreen = document.getElementById("loginScreen");
+  const mainApp = document.getElementById("mainApp");
+  const loginTitle = document.getElementById("loginTitle");
+  const loginError = document.getElementById("loginError");
+  const loginUsernameInput = document.getElementById("loginUsername");
+  const loginPasswordInput = document.getElementById("loginPassword");
+  const loginBtn = document.getElementById("loginBtn");
+  const switchToRegister = document.getElementById("switchToRegister");
+
+  const usersContainer = document.getElementById("usersContainer");
+  const postList = document.getElementById("postList");
+  const newPostForm = document.getElementById("newPostForm");
+  const newPostText = document.getElementById("newPostText");
+  const newPostBtn = newPostForm.querySelector("button");
+
+  const profileAvatar = document.getElementById("profileAvatar");
+  const avatarInput = document.getElementById("avatarInput");
+  const profileUsernameInput = document.getElementById("profileUsername");
+  const profileNameInput = document.getElementById("profileName");
+  const saveProfileBtn = document.getElementById("saveProfileBtn");
+
+  // Режим: login или register
+  let mode = "login";
+
+  // --- Функции для localStorage ---
+  function saveUsers() {
+    localStorage.setItem(LS_USERS, JSON.stringify(users));
+  }
+  function savePosts() {
+    localStorage.setItem(LS_POSTS, JSON.stringify(posts));
+  }
+  function saveCurrentUser() {
+    localStorage.setItem(LS_CURRENT_USER, currentUser);
+  }
+
+  // Найти пользователя по username
+  function findUser(username) {
+    return users.find(u => u.username === username);
+  }
+
+  // Проверить валидность username (латиница, цифры, _, без пробелов)
+  function validUsername(name) {
+    return /^[a-zA-Z0-9_]+$/.test(name);
+  }
+
+  // Генерируем аватар-заглушку (цветной круг с первой буквой)
+  function defaultAvatar(username) {
+    const colors = [
+      "#1DA1F2","#17BF63","#E0245E","#FFAD1F","#794BC4",
+      "#F45D22","#E81C4F","#00B8E8","#FF6F61","#00A67E"
+    ];
+    const char = username.charAt(0).toUpperCase();
+    const colorIndex = username.charCodeAt(0) % colors.length;
+    const bg = colors[colorIndex];
+    // Создаём canvas, рисуем букву, возвращаем dataURL
+    const canvas = document.createElement("canvas");
+    canvas.width = 100; canvas.height = 100;
+    const ctx = canvas.getContext("2d");
+    ctx.fillStyle = bg;
+    ctx.fillRect(0,0,100,100);
+    ctx.font = "bold 60px Arial";
+    ctx.fillStyle = "white";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(char, 50, 58);
+    return canvas.toDataURL();
+  }
+
+  // Рендер экрана логина/регистрации
+  function renderLogin() {
+    loginScreen.style.display = "flex";
+    mainApp.style.display = "none";
+    loginError.textContent = "";
+    loginUsernameInput.value = "";
+    loginPasswordInput.value = "";
+    if (mode === "login") {
+      loginTitle.textContent = "Вход в X-Мессенджер";
+      loginBtn.textContent = "Войти";
+      switchToRegister.textContent = "Нет аккаунта? Зарегистрироваться";
+    } else {
+      loginTitle.textContent = "Регистрация в X-Мессенджер";
+      loginBtn.textContent = "Зарегистрироваться";
+      switchToRegister.textContent = "Есть аккаунт? Войти";
+    }
+  }
+
+  // Рендер основного интерфейса
+  function renderApp() {
+    loginScreen.style.display = "none";
+    mainApp.style.display = "flex";
+    renderUsersList();
+    renderFeed();
+    renderProfile();
+    newPostText.value = "";
+    newPostBtn.disabled = true;
+  }
+
+  // Рендер списка пользователей — **все пользователи**
+  function renderUsersList() {
+    usersContainer.innerHTML = "";
+    users.forEach(user => {
+      const userDiv = document.createElement("div");
+      userDiv.className = "user";
+
+      const avatarImg = document.createElement("img");
+      avatarImg.className = "avatar";
+      avatarImg.src = user.avatarDataUrl || defaultAvatar(user.username);
+      avatarImg.alt = user.username;
+      userDiv.appendChild(avatarImg);
+
+      const infoDiv = document.createElement("div");
+      infoDiv.className = "user-info";
+
+      const unameDiv = document.createElement("div");
+      unameDiv.className = "username";
+      unameDiv.textContent = "@" + user.username;
+
+      const nameDiv = document.createElement("div");
+      nameDiv.className = "name";
+      nameDiv.textContent = user.name || "Без имени";
+
+      infoDiv.appendChild(unameDiv);
+      infoDiv.appendChild(nameDiv);
+      userDiv.appendChild(infoDiv);
+
+      if(user.username !== currentUser){
+        const btn = document.createElement("button");
+        btn.className = "subscribe-btn";
+        const currentUserObj = findUser(currentUser);
+        const isSubscribed = currentUserObj.subscriptions && currentUserObj.subscriptions.includes(user.username);
+        if(isSubscribed){
+          btn.textContent = "Отписаться";
+          btn.classList.add("subscribed");
+        } else {
+          btn.textContent = "Подписаться";
+        }
+        btn.onclick = () => {
+          toggleSubscription(user.username);
+        };
+        userDiv.appendChild(btn);
+      }
+
+      usersContainer.appendChild(userDiv);
+    });
+  }
+
+  // Переключение подписки текущего пользователя на другого
+  function toggleSubscription(usernameToToggle) {
+    const currentUserObj = findUser(currentUser);
+    if(!currentUserObj.subscriptions) currentUserObj.subscriptions = [];
+    if(currentUserObj.subscriptions.includes(usernameToToggle)){
+      // Отписаться
+      currentUserObj.subscriptions = currentUserObj.subscriptions.filter(u => u !== usernameToToggle);
+    } else {
+      // Подписаться
+      currentUserObj.subscriptions.push(usernameToToggle);
+    }
+    saveUsers();
+    renderUsersList();
+    renderFeed();
+  }
+
+  // Рендер ленты публикаций — **все публикации всех пользователей без фильтра**
+  function renderFeed() {
+    postList.innerHTML = "";
+    if(!currentUser) return;
+
+    // Копируем все посты
+    let feedPosts = posts.slice();
+
+    // Сортируем по дате (новые сверху)
+    feedPosts.sort((a,b) => b.timestamp - a.timestamp);
+
+    feedPosts.forEach(post => {
+      const postUser = findUser(post.username);
+
+      const postDiv = document.createElement("div");
+      postDiv.className = "post";
+
+      // Заголовок с аватаром и ником
+      const headerDiv = document.createElement("div");
+      headerDiv.className = "post-header";
+
+      const avatarImg = document.createElement("img");
+      avatarImg.className = "avatar";
+      avatarImg.src = (postUser && postUser.avatarDataUrl) || defaultAvatar(post.username);
+      avatarImg.alt = post.username;
+      headerDiv.appendChild(avatarImg);
+
+      const usernameSpan = document.createElement("span");
+      usernameSpan.className = "username";
+      usernameSpan.textContent = "@" + post.username;
+      headerDiv.appendChild(usernameSpan);
+
+      postDiv.appendChild(headerDiv);
+
+      // Текст публикации
+      const contentDiv = document.createElement("div");
+      contentDiv.className = "post-content";
+      contentDiv.textContent = post.content;
+      postDiv.appendChild(contentDiv);
+
+      postList.appendChild(postDiv);
+    });
+  }
+
+  // Рендер профиля текущего пользователя
+  function renderProfile() {
+    const user = findUser(currentUser);
+    if(!user) return;
+    profileUsernameInput.value = user.username;
+    profileNameInput.value = user.name || "";
+    profileAvatar.src = user.avatarDataUrl || defaultAvatar(user.username);
+  }
+
+  // Сброс формы логина/регистрации
+  function resetLoginForm() {
+    loginUsernameInput.value = "";
+    loginPasswordInput.value = "";
+    loginError.textContent = "";
+  }
+
+  // --- Обработчики событий ---
+
+  // Переключение между login и register
+  switchToRegister.addEventListener("click", () => {
+    mode = (mode === "login") ? "register" : "login";
+    resetLoginForm();
+    renderLogin();
+  });
+
+  // Логин / регистрация
+  loginBtn.addEventListener("click", () => {
+    const username = loginUsernameInput.value.trim();
+    const password = loginPasswordInput.value.trim();
+
+    if(!username || !password){
+      loginError.textContent = "Пожалуйста, заполните все поля";
+      return;
+    }
+    if(!validUsername(username)){
+      loginError.textContent = "Имя пользователя может содержать только латиницу, цифры и подчёркивания";
+      return;
+    }
+
+    if(mode === "login"){
+      // Вход
+      const user = findUser(username);
+      if(!user || user.password !== password){
+        loginError.textContent = "Неверное имя пользователя или пароль";
+        return;
+      }
+      currentUser = username;
+      saveCurrentUser();
+      renderApp();
+    } else {
+      // Регистрация
+      if(findUser(username)){
+        loginError.textContent = "Пользователь с таким именем уже существует";
+        return;
+      }
+      // Создаем пользователя
+      users.push({
+        username,
+        password,
+        name: "",
+        avatarDataUrl: "",
+        subscriptions: []
+      });
+      saveUsers();
+      currentUser = username;
+      saveCurrentUser();
+      renderApp();
+    }
+  });
+
+  // Автоматическая авторизация, если уже залогинен
+  if(currentUser && findUser(currentUser)){
+    renderApp();
+  } else {
+    renderLogin();
+  }
+
+  // Ввод в новый пост — кнопка активна если есть текст
+  newPostText.addEventListener("input", () => {
+    newPostBtn.disabled = newPostText.value.trim().length === 0;
+  });
+
+  // Создать новую публикацию
+  newPostForm.addEventListener("submit", e => {
+    e.preventDefault();
+    const content = newPostText.value.trim();
+    if(!content) return;
+
+    const newPost = {
+      id: Date.now() + Math.random(),
+      username: currentUser,
+      content,
+      timestamp: Date.now()
+    };
+    posts.push(newPost);
+    savePosts();
+    newPostText.value = "";
+    newPostBtn.disabled = true;
+    renderFeed();
+  });
+
+  // Загрузка аватара
+  avatarInput.addEventListener("change", e => {
+    const file = e.target.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const user = findUser(currentUser);
+      if(user){
+        user.avatarDataUrl = reader.result;
+        saveUsers();
+        renderProfile();
+        renderUsersList();
+        renderFeed();
+      }
+    };
+    reader.readAsDataURL(file);
+  });
+
+  // Сохранить профиль (отображаемое имя)
+  saveProfileBtn.addEventListener("click", () => {
+    const user = findUser(currentUser);
+    if(user){
+      user.name = profileNameInput.value.trim();
+      saveUsers();
+      renderUsersList();
+    }
+  });
+
+</script>
+</body>
+</html>
